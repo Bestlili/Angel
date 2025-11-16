@@ -11,11 +11,30 @@
  Target Server Version : 90100 (9.1.0)
  File Encoding         : 65001
 
- Date: 09/11/2025 20:52:16
+ Date: 16/11/2025 17:35:30
 */
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for admin_log
+-- ----------------------------
+DROP TABLE IF EXISTS `admin_log`;
+CREATE TABLE `admin_log` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `action_type` varchar(50) NOT NULL COMMENT '操作类型',
+  `action_detail` text COMMENT '操作详情',
+  `target_id` varchar(50) DEFAULT NULL COMMENT '目标ID',
+  `operator_id` int NOT NULL COMMENT '操作员ID',
+  `operator_name` varchar(100) NOT NULL COMMENT '操作员姓名',
+  `created_at` datetime NOT NULL COMMENT '操作时间',
+  `ip_address` varchar(45) DEFAULT NULL COMMENT 'IP地址',
+  PRIMARY KEY (`id`),
+  KEY `idx_admin_log_operator_id` (`operator_id`),
+  KEY `idx_admin_log_action_type` (`action_type`),
+  KEY `idx_admin_log_created_at` (`created_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='管理员操作日志表';
 
 -- ----------------------------
 -- Table structure for comment
@@ -35,7 +54,7 @@ CREATE TABLE `comment` (
   KEY `idx_comment_post_id` (`post_id`),
   KEY `idx_comment_user_id` (`user_id`),
   KEY `idx_comment_created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='评论表';
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='评论表';
 
 -- ----------------------------
 -- Table structure for comment_like
@@ -74,7 +93,7 @@ CREATE TABLE `diary` (
   KEY `idx_diary_user_id` (`user_id`),
   CONSTRAINT `diary_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
   CONSTRAINT `diary_chk_1` CHECK ((`mood_id` between 1 and 6))
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户日记表';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户日记表';
 
 -- ----------------------------
 -- Table structure for message
@@ -92,7 +111,7 @@ CREATE TABLE `message` (
   KEY `idx_session_id` (`session_id`) COMMENT '按会话ID查询消息的索引',
   KEY `idx_session_seq` (`session_id`,`sequence`) COMMENT '同一会话内按序号排序的联合索引',
   CONSTRAINT `fk_message_session` FOREIGN KEY (`session_id`) REFERENCES `session` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI对话的消息表（存储单条消息内容）';
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI对话的消息表（存储单条消息内容）';
 
 -- ----------------------------
 -- Table structure for post
@@ -108,12 +127,17 @@ CREATE TABLE `post` (
   `comments_count` int DEFAULT '0' COMMENT '评论数',
   `images` varchar(1000) DEFAULT NULL COMMENT '图片URL数组（JSON字符串）',
   `tags` varchar(500) DEFAULT NULL COMMENT '标签数组（JSON字符串）',
+  `status` tinyint DEFAULT '0' COMMENT '帖子状态：0-待审核，1-已通过，2-已拒绝',
+  `reject_reason` varchar(255) DEFAULT NULL COMMENT '拒绝原因',
+  `reviewer_id` int DEFAULT NULL COMMENT '审核员ID',
+  `review_time` datetime DEFAULT NULL COMMENT '审核时间',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`) COMMENT '用户ID索引，用于查询用户发布的帖子',
   KEY `idx_post_user_id` (`user_id`),
   KEY `idx_post_created_at` (`created_at`),
-  KEY `idx_post_likes` (`likes`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='帖子表';
+  KEY `idx_post_likes` (`likes`),
+  KEY `idx_post_status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='帖子表';
 
 -- ----------------------------
 -- Table structure for post_like
@@ -130,7 +154,7 @@ CREATE TABLE `post_like` (
   KEY `idx_user_id` (`user_id`) COMMENT '用户ID索引，用于查询某用户点赞过的所有帖子',
   KEY `idx_post_like_post_id` (`post_id`),
   KEY `idx_post_like_user_id` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='帖子点赞表';
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='帖子点赞表';
 
 -- ----------------------------
 -- Table structure for post_save
@@ -147,7 +171,7 @@ CREATE TABLE `post_save` (
   KEY `idx_user_id` (`user_id`) COMMENT '用户ID索引，用于查询某用户收藏的所有帖子',
   KEY `idx_post_save_post_id` (`post_id`),
   KEY `idx_post_save_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='帖子收藏表';
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='帖子收藏表';
 
 -- ----------------------------
 -- Table structure for session
@@ -162,7 +186,7 @@ CREATE TABLE `session` (
   `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '会话状态：0-活跃，1-已结束',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`) COMMENT '按用户ID查询会话的索引'
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI对话的会话表（存储对话整体信息）';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI对话的会话表（存储对话整体信息）';
 
 -- ----------------------------
 -- Table structure for topic
@@ -204,7 +228,7 @@ CREATE TABLE `user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_email` (`email`) COMMENT '邮箱唯一索引，避免重复注册',
   KEY `idx_status` (`status`) COMMENT '账号状态索引，便于筛选正常用户'
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表（含管理员）';
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表（含管理员）';
 
 -- ----------------------------
 -- Table structure for user_follow
@@ -221,6 +245,6 @@ CREATE TABLE `user_follow` (
   KEY `idx_following_id` (`following_id`) COMMENT '被关注者ID索引，用于查询用户的粉丝列表',
   KEY `idx_user_follow_follower_id` (`follower_id`),
   KEY `idx_user_follow_following_id` (`following_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户关注关系表';
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户关注关系表';
 
 SET FOREIGN_KEY_CHECKS = 1;
